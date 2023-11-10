@@ -5,16 +5,48 @@ import { QuizForm } from './QuizForm/QuizForm';
 import { SearchBar } from './SearchBar';
 import { GlobalStyle } from './GlobalStyle';
 import { QuizList } from './QuizList/QuizList';
-import initialQuizItems from '../quiz-items.json';
+import { fetchQuizzez } from './app1';
+
+// import initialQuizItems from '../quiz-items.json';
+
+const storagaKey = 'quiz-filters';
 
 export class App extends Component {
   state = {
-    quizItems: initialQuizItems,
+    quizItems: [],
     filters: {
       topic: '',
       level: 'all',
     },
   };
+
+  async componentDidMount() { 
+    const savedFilters = window.localStorage.getItem(storagaKey);
+    if (savedFilters !== 0) { 
+      const filters = JSON.parse(savedFilters);
+      this.setState({ filters });
+    }
+
+    try {
+      const initialQuizzez = await fetchQuizzez;
+      console.log(initialQuizzez);
+    } catch (error) { 
+
+    }
+    
+  }
+
+
+  componentDidUpdate(prevProps, prevState) {
+    console.log('Component did Update')
+    if (prevState.filters !== this.state.filters) {
+      window.localStorage.setItem(storagaKey, JSON.stringify(this.state.filters))
+     }
+
+   }
+  
+  
+  ;
 
   updateTopicFilter = newTopic => {
     this.setState(
