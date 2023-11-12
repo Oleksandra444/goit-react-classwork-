@@ -1,11 +1,13 @@
 import { Component } from 'react';
-import { nanoid } from 'nanoid'
+// import { nanoid } from 'nanoid'
 import { Layout } from "./Layout";
 import { QuizForm } from './QuizForm/QuizForm'; 
 import { SearchBar } from './SearchBar';
 import { GlobalStyle } from './GlobalStyle';
 import { QuizList } from './QuizList/QuizList';
-import { fetchQuizzez } from './app1';
+import { addNewQuize, fetchQuizzez } from 'app';
+import { Circles } from 'react-loader-spinner';
+
 
 // import initialQuizItems from '../quiz-items.json';
 
@@ -14,6 +16,7 @@ const storagaKey = 'quiz-filters';
 export class App extends Component {
   state = {
     quizItems: [],
+    isLoading: false,
     filters: {
       topic: '',
       level: 'all',
@@ -28,11 +31,13 @@ export class App extends Component {
     }
 
     try {
-      const initialQuizzez = await fetchQuizzez;
+      this.setState({ isLoading: true })
+      const initialQuizzez = await fetchQuizzez();
       console.log(initialQuizzez);
-    } catch (error) { 
+      this.setState({quizItems:initialQuizzez})
+    } catch (error) {
 
-    }
+    } finally {this.setState({ isLoading: false }) }
     
   }
 
@@ -81,21 +86,46 @@ export class App extends Component {
     })
   };
   
-  deleteQuiz = quizId => { this.setState(prevState => { return { quizItems: prevState.quizItems.filter(item => item.id !== quizId) } }) };
-  
-  addQuiz = newQuiz => {
-    const quiz = {
-      ...newQuiz,
-      id: nanoid(),
-    };
+  deleteQuiz = quizId => {
     this.setState(prevState => {
       return {
-        quizItems: [...prevState.quizItems, quiz],
-      };
+        quizItems: prevState.quizItems.filter(item => item.id !== quizId)
+      }
     });
-  }
+  };
+  
+  addQuiz = async newQuiz => {
+    try {
+      this.setState({ isLoading: true })
+      const addedQuiz = await addNewQuize(newQuiz)
+      this.setState(prevState => { 
+        return {
+          quizItems: [...prevState.quizItems, addedQuiz]
+        }
+
+      })
+    }
+    catch (error) { }
+    finally { 
+      this.setState({isLoading:false})
+
+    }
+  };
+
+
+
+    // const quiz = {
+    //   ...newQuiz,
+    //   id: nanoid(),
+    // };
+    // this.setState(prevState => {
+    //   return {
+    //     quizItems: [...prevState.quizItems, quiz],
+    //   };
+    // });
+  
   render() {
-    const { quizItems, filters } = this.state;
+    const { quizItems, filters, isLoading } = this.state;
 
     const visibleQuizItems = quizItems.filter(item => {
       const hasTopic = item.topic.toLowerCase().includes(filters.topic.toLowerCase())
@@ -111,6 +141,17 @@ export class App extends Component {
         <Layout>
           <QuizForm onAdd={this.addQuiz} />
           <SearchBar filters={filters} onUpdateTopic={this.updateTopicFilter} onUpdateLevel={this.UpdateLevelFilter} onReset={this.resetFilters} />
+
+          {isLoading &&
+          <Circles
+  height="80"
+  width="80"
+  color="#4fa94d"
+  ariaLabel="circles-loading"
+  wrapperStyle={{}}
+  wrapperClass=""
+  visible={true}
+/>}
           {visibleQuizItems.length > 0 && <QuizList items={visibleQuizItems} onDelete = { this.deleteQuiz} />}
           <GlobalStyle />
         </Layout>
